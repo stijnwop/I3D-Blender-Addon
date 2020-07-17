@@ -28,7 +28,7 @@ class File(Node):
 
     @property
     def name(self):
-        return self.resolved_path.replace('\\', '/')
+        return self.resolved_path
 
     @property
     def element(self):
