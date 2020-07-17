@@ -28,6 +28,7 @@ def register(cls):
 @register
 class I3DShaderParameter(bpy.types.PropertyGroup):
     name: StringProperty(default='Unnamed Attribute')
+    enabled: BoolProperty(default=False)
     type: EnumProperty(items=[('FLOAT1', '', ''), ('FLOAT2', '', ''), ('FLOAT3', '', ''), ('FLOAT4', '', '')])
     data_float_1: FloatProperty()
     data_float_2: FloatVectorProperty(size=2)
@@ -49,6 +50,44 @@ class I3DShaderTexture(bpy.types.PropertyGroup):
 @register
 class I3DShaderVariation(bpy.types.PropertyGroup):
     name: StringProperty(default='Error')
+
+# @register
+# class I3DShaderProperties(bpy.types.PropertyGroup):
+#     attribute_0: PointerProperty(type=I3DShaderParameter)
+#     attribute_1: PointerProperty(type=I3DShaderParameter)
+#     attribute_2: PointerProperty(type=I3DShaderParameter)
+#     attribute_3: PointerProperty(type=I3DShaderParameter)
+#     attribute_4: PointerProperty(type=I3DShaderParameter)
+#     attribute_5: PointerProperty(type=I3DShaderParameter)
+#     attribute_6: PointerProperty(type=I3DShaderParameter)
+#     attribute_7: PointerProperty(type=I3DShaderParameter)
+#     attribute_8: PointerProperty(type=I3DShaderParameter)
+#     attribute_9: PointerProperty(type=I3DShaderParameter)
+#     attribute_10: PointerProperty(type=I3DShaderParameter)
+#     attribute_11: PointerProperty(type=I3DShaderParameter)
+#     attribute_12: PointerProperty(type=I3DShaderParameter)
+#     attribute_13: PointerProperty(type=I3DShaderParameter)
+#     attribute_14: PointerProperty(type=I3DShaderParameter)
+#     attribute_15: PointerProperty(type=I3DShaderParameter)
+#     attribute_16: PointerProperty(type=I3DShaderParameter)
+#     attribute_17: PointerProperty(type=I3DShaderParameter)
+#     attribute_18: PointerProperty(type=I3DShaderParameter)
+
+
+# @register
+# class I3DShaderTextures(bpy.types.PropertyGroup):
+#     texture_0: PointerProperty(type=I3DShaderTexture)
+#     texture_1: PointerProperty(type=I3DShaderTexture)
+#     texture_2: PointerProperty(type=I3DShaderTexture)
+#     texture_3: PointerProperty(type=I3DShaderTexture)
+#     texture_4: PointerProperty(type=I3DShaderTexture)
+#     texture_5: PointerProperty(type=I3DShaderTexture)
+#     texture_6: PointerProperty(type=I3DShaderTexture)
+#     texture_7: PointerProperty(type=I3DShaderTexture)
+#     texture_8: PointerProperty(type=I3DShaderTexture)
+#     texture_9: PointerProperty(type=I3DShaderTexture)
+#     texture_10: PointerProperty(type=I3DShaderTexture)
+#     texture_11: PointerProperty(type=I3DShaderTexture)
 
 
 @register
@@ -82,31 +121,21 @@ class I3DLoadCustomShader(bpy.types.Operator):
         except ET.ParseError as e:
             print(f"Shader file is not correct xml, failed with error: {e}")
             attributes.source = shader_unselected_default_text
-            attributes.variations.clear()
-            attributes.shader_parameters.clear()
-            attributes.shader_textures.clear()
-            attributes.variation = shader_no_variations
         else:
             root = tree.getroot()
             if root.tag != 'CustomShader':
                 print(f"File is xml, but not a properly formatted shader file! Aborting")
                 attributes.source = shader_unselected_default_text
-                attributes.variations.clear()
-                attributes.shader_parameters.clear()
-                attributes.shader_textures.clear()
-                attributes.variation = shader_no_variations
-            else:
-                attributes.variations.clear()
-                variations = root.find('Variations')
+                return {'FINISHED'}
 
-                if variations is not None:
-                    for variation in variations:
-                        new_variation = attributes.variations.add()
-                        new_variation.name = variation.attrib['name']
+            attributes.variations.clear()
 
-                    attributes.variation = variations[0].attrib['name']
-                else:
-                    attributes.variation = shader_no_variations
+            variations = root.find('Variations')
+
+            if variations is not None:
+                for variation in variations:
+                    new_variation = attributes.variations.add()
+                    new_variation.name = variation.attrib['name']
 
         print('Ran the operator')
 
@@ -122,7 +151,6 @@ class I3DMaterialShader(bpy.types.PropertyGroup):
         if self['source'] != shader_unselected_default_text:
             bpy.ops.i3dio.load_custom_shader()
         print(f"Set shader source to '{value}'")
-        print(f"Variation: {self.variation}")
 
     def source_getter(self):
         return self.get('source', shader_unselected_default_text)
@@ -145,27 +173,20 @@ class I3DMaterialShader(bpy.types.PropertyGroup):
                            get=source_getter
                            )
 
-    def variation_setter(self, value):
-        self['variation'] = value
-        print(f"set the variation to '{value}'")
-
-    def variation_getter(self):
-        return self.get('variation', shader_no_variations)
-
     variation: EnumProperty(name='Variation',
                             description='The shader variation',
                             default=None,
                             items=variation_items_update,
                             options=set(),
                             update=None,
-                            get=variation_getter,
-                            set=variation_setter
+                            get=None,
+                            set=None
                             )
 
     variations: CollectionProperty(type=I3DShaderVariation)
 
     #shader_properties: PointerProperty(type=I3DShaderProperties)
-    shader_parameters: CollectionProperty(type=I3DShaderParameter)
+    shader_properties: CollectionProperty(type=I3DShaderParameter)
 
     #shader_textures: PointerProperty(type=I3DShaderTextures)
     shader_textures: CollectionProperty(type=I3DShaderTexture)
@@ -203,7 +224,7 @@ class I3D_IO_PT_shader_attributes(Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None and context.object.active_material.i3d_attributes.shader_parameters
+        return context.object is not None and context.object.active_material.i3d_attributes.shader_properties
 
     def draw(self, context):
         layout = self.layout
