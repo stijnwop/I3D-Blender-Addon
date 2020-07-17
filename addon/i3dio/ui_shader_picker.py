@@ -41,7 +41,6 @@ class I3DShaderTexture(bpy.types.PropertyGroup):
                            subtype='FILE_PATH',
                            default=''
                            )
-    default_source: StringProperty()
 
 
 @register
@@ -105,8 +104,8 @@ def parameter_element_as_dict(parameter):
 
 def texture_element_as_dict(texture):
     texture_dictionary = {'name': texture.attrib['name'],
-                          'default_file': texture.attrib.get('defaultFilename', '')
-                          }
+                            'default_file': texture.attrib.get('defaultFilename', '')
+                            }
     return texture_dictionary
 
 
@@ -182,7 +181,6 @@ class I3DLoadCustomShaderVariation(bpy.types.Operator):
                             tex = shader.shader_textures.add()
                             tex.name = texture['name']
                             tex.source = texture['default_file']
-                            tex.default_source = texture['default_file']
 
         return {'FINISHED'}
 
