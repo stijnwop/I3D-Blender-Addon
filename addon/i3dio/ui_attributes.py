@@ -7,9 +7,6 @@ from bpy.props import (
     PointerProperty
 )
 
-from bpy_extras.io_utils import ImportHelper
-from bpy.types import Operator
-
 from . import properties
 
 
@@ -178,5 +175,6 @@ def register():
 
 
 def unregister():
-    for cls in classes:
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
