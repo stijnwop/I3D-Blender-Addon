@@ -255,7 +255,7 @@ class I3D_IO_PT_shader(Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.object is not None and context.object.active_material is not None
+        return context.object is not None
 
     def draw(self, context):
         layout = self.layout
@@ -278,11 +278,7 @@ class I3D_IO_PT_shader_parameters(Panel):
 
     @classmethod
     def poll(cls, context):
-        try:
-            is_active = bool(context.object.active_material.i3d_attributes.shader_parameters)
-        except AttributeError:
-            is_active = False
-        return is_active
+        return context.object is not None and context.object.active_material.i3d_attributes.shader_parameters
 
     def draw(self, context):
         layout = self.layout
@@ -322,11 +318,7 @@ class I3D_IO_PT_shader_textures(Panel):
 
     @classmethod
     def poll(cls, context):
-        try:
-            is_active = bool(context.object.active_material.i3d_attributes.shader_textures)
-        except AttributeError:
-            is_active = False
-        return is_active
+        return context.object is not None and context.object.active_material.i3d_attributes.shader_textures
 
 
 def register():
