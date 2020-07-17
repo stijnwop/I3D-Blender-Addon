@@ -1,4 +1,6 @@
 import xml.etree.ElementTree as ET
+import random
+import string
 import bpy
 from bpy.types import (Panel)
 from bpy.props import (
@@ -26,7 +28,7 @@ def register(cls):
 @register
 class I3DShaderParameter(bpy.types.PropertyGroup):
     name: StringProperty(default='Unnamed Attribute')
-    type: EnumProperty(items=[('float', '', ''), ('float2', '', ''), ('float3', '', ''), ('float4', '', '')])
+    type: EnumProperty(items=[('FLOAT1', '', ''), ('FLOAT2', '', ''), ('FLOAT3', '', ''), ('FLOAT4', '', '')])
     data_float_1: FloatProperty()
     data_float_2: FloatVectorProperty(size=2)
     data_float_3: FloatVectorProperty(size=3)
@@ -95,14 +97,6 @@ class I3DLoadCustomShader(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def parameter_element_as_dict(parameter):
-    parameter_dictionary = {'name': parameter.attrib['name'],
-                            'default_values': parameter.attrib['defaultValue'].split(),
-                            'type': parameter.attrib['type']
-                            }
-    return parameter_dictionary
-
-
 @register
 class I3DLoadCustomShaderVariation(bpy.types.Operator):
     """This function can load the parameters for a given shader variation, assumes that the source is valid,
@@ -118,7 +112,7 @@ class I3DLoadCustomShaderVariation(bpy.types.Operator):
 
         try:
             tree = ET.parse(bpy.path.abspath(shader.source))
-        except (ET.ParseError, FileNotFoundError) as e:
+        except ET.ParseError as e:
             print(f"Shader file is no longer valid: {e}")
             shader.source = shader_unselected_default_text
             shader.variations.clear()
@@ -129,35 +123,10 @@ class I3DLoadCustomShaderVariation(bpy.types.Operator):
             shader.shader_parameters.clear()
             shader.shader_textures.clear()
             root = tree.getroot()
-
-            # TODO: This should not be run every time the variation is changed, but instead stored somewhere
-            parameters = root.find('Parameters')
-            grouped_parameters = {}
-            for parameter in parameters:
-                group_name = parameter.attrib['group']
-                group = grouped_parameters.setdefault(group_name, [])
-                group.append(parameter_element_as_dict(parameter))
-
             variations = root.find('Variations')
             variation = variations.find(f"./Variation[@name='{shader.variation}']")
             if variation is not None:
-                parameter_groups = variation.attrib['groups'].split()
-                for group in parameter_groups:
-                    parameter_group = grouped_parameters.get(group)
-                    if parameter_group is not None:
-                        for parameter in grouped_parameters[group]:
-                            param = shader.shader_parameters.add()
-                            param.name = parameter['name']
-                            param.type = parameter['type']
-                            data = tuple(map(float, parameter['default_values']))
-                            if param.type == 'float':
-                                param.data_float_1 = data
-                            elif param.type == 'float2':
-                                param.data_float_2 = data
-                            elif param.type == 'float3':
-                                param.data_float_3 = data
-                            else:
-                                param.data_float_4 = data
+                pass
 
         return {'FINISHED'}
 
@@ -257,18 +226,16 @@ class I3D_IO_PT_shader_attributes(Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
-        parameters = bpy.context.active_object.active_material.i3d_attributes.shader_parameters
-        for parameter in parameters:
-            if parameter.type == 'float':
-                property_type = 'data_float_1'
-            elif parameter.type == 'float2':
-                property_type = 'data_float_2'
-            elif parameter.type == 'float3':
-                property_type = 'data_float_3'
-            else:
-                property_type = 'data_float_4'
-
-            layout.prop(parameter, property_type, text=parameter.name)
+        # properties = bpy.context.active_object.active_material.i3d_attributes.shader_properties
+        # for attribute_name in properties.__annotations__.keys():
+        #     attribute = getattr(properties, attribute_name)
+        #     if attribute.enabled:
+        #         if attribute.type == 'FLOAT4':
+        #             attribute_type = 'data_float_4'
+        #         else:
+        #             attribute_type = 'data_float'
+        #
+        #         layout.prop(attribute, attribute_type, text=attribute.name)
 
 
 @register
